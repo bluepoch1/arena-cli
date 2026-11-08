@@ -69,3 +69,33 @@ node arena.js agent "make a hello world python script"
   `xvfb-run -a node arena.js ...` or set `ARENA_HEADLESS=1` off (default runs with `headless: false` under xvfb).
 - Daily usage limits apply per arena.ai account (resets ~7:59).
 - Do NOT commit your real `cookies.json` — it contains your session token.
+
+## HTTP API mode (server.js)
+
+Run a local API server so any app can chat without touching the browser directly:
+
+```bash
+node server.js          # listens on :3123 (override with PORT)
+```
+
+Endpoints:
+- `GET /health` — status
+- `GET /models` — model catalog
+- `POST /set-cookies` — `{arena_auth_v10, cf_clearance?, user_country_code?}` — save session
+- `POST /chat` — `{message, model?, modelB?, mode?}` — mode: direct | side | battle | agent
+
+Example:
+
+```bash
+curl -X POST http://localhost:3123/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "hello", "model": "grok-4.6", "mode": "direct"}'
+```
+
+Optional auth: set `ARENA_API_KEY=secret` and send header `x-api-key: secret`.
+
+## Important: run on a residential machine
+
+arena.ai gates chat sends with reCAPTCHA v3. Datacenter/VPS IPs get a low bot
+score and the send is blocked with a login modal. Run this API on your own PC
+(home IP) for reliable chat. The model catalog and history APIs work from VPS.
