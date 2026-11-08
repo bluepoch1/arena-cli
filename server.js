@@ -203,4 +203,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`arena-api listening on :${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`arena-api listening on :${PORT}`));

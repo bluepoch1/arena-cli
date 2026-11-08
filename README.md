@@ -99,3 +99,22 @@ Optional auth: set `ARENA_API_KEY=secret` and send header `x-api-key: secret`.
 arena.ai gates chat sends with reCAPTCHA v3. Datacenter/VPS IPs get a low bot
 score and the send is blocked with a login modal. Run this API on your own PC
 (home IP) for reliable chat. The model catalog and history APIs work from VPS.
+
+## GUI app (recommended for desktop users)
+
+Opens a real Chromium window on your desktop (Linux Mint / XFCE works out of
+the box) with a built-in chat interface:
+
+```bash
+node gui.js
+```
+
+- Click **Login to Arena** -> arena.ai opens in a tab -> log in with Google
+  yourself (pass any challenge - you are on your own home IP, so reCAPTCHA
+  scores are fine). Cookies are captured automatically and saved to
+  cookies.json. No manual cookie copying.
+- Pick mode (Direct / Side by Side / Battle / Agent) and model, then chat.
+- Chat requests run from your own browser profile and IP, which gives the
+  best reCAPTCHA v3 results.
+
+Requires: Node 20+, `npm install playwright`, `npx playwright install chromium`.
