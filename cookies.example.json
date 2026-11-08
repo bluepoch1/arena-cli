@@ -1,0 +1,5 @@
+{
+  "arena_auth_v10": "base64-<PASTE arena-auth-prod-v1.0 COOKIE VALUE HERE>",
+  "cf_clearance": "<OPTIONAL: cf_clearance cookie value>",
+  "user_country_code": "ID"
+}
