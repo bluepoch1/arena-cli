@@ -18,13 +18,15 @@ npm install playwright
 npx playwright install chromium
 ```
 
-## Get your session cookies
+## Login (automatic cookie capture)
 
-1. Log in at https://arena.ai in your browser.
-2. Open DevTools (F12) → Application → Cookies → `https://arena.ai`.
-3. Copy the value of the cookie `arena-auth-prod-v1.0` (starts with `base64-`).
-4. Copy `cp cookies.example.json cookies.json` and paste the value into `arena_auth_v10`.
-5. (Optional, more reliable) also copy the `cf_clearance` cookie value into `cf_clearance`.
+```bash
+node arena.js login
+```
+
+A browser window opens — log in to arena.ai once (Google or email).
+The script detects the login and saves your session to `cookies.json` automatically.
+You never need to touch DevTools.
 
 ## Install Chromium binary (if the default download fails)
 

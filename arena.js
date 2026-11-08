@@ -11,6 +11,7 @@
 //   node arena.js battle "<message>"                # two anonymous models
 //   node arena.js agent "<message>"                 # agent mode (workspace)
 //   node arena.js models                            # list available models
+//   node arena.js login                             # interactive login (saves cookies automatically)
 //
 // Examples:
 //   node arena.js direct grok-4.6 "explain quines briefly"
@@ -31,7 +32,7 @@ function fail(msg) { console.error('ERROR: ' + msg); process.exit(2); }
 
 function loadCookies() {
   if (!fs.existsSync(COOKIE_FILE)) {
-    fail(`cookies.json not found at ${COOKIE_FILE}. Export arena-auth-prod-v1.0 and cf_clearance cookies from your logged-in arena.ai browser session.`);
+    fail(`cookies.json not found at ${COOKIE_FILE}. Run: node arena.js login`);
   }
   const ck = JSON.parse(fs.readFileSync(COOKIE_FILE, 'utf8'));
   if (!ck.arena_auth_v10) fail('cookies.json missing "arena_auth_v10"');
@@ -62,6 +63,46 @@ async function launch(ck) {
 async function isLoggedIn(pg) {
   const body = await pg.innerText('body');
   return !body.includes('Log In or Create Account');
+}
+
+// Interactive login: opens a visible browser, user logs in once, cookies are saved.
+async function login() {
+  const ctx = await chromium.launchPersistentContext(PROFILE, {
+    headless: false,
+    executablePath: fs.existsSync(CHROME) ? CHROME : undefined,
+    args: ['--no-sandbox', '--disable-blink-features=AutomationControlled', '--lang=en-US'],
+    locale: 'en-US',
+    timezoneId: 'Asia/Jakarta',
+    viewport: { width: 1366, height: 768 },
+  });
+  const pg = ctx.pages()[0] || await ctx.newPage();
+  await pg.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  console.log('Browser opened. Log in at arena.ai (Google/email).');
+  console.log('Waiting for login... (this checks every 3 seconds)');
+  for (let i = 0; i < 600; i++) {
+    await pg.waitForTimeout(3000);
+    let body = '';
+    try { body = await pg.innerText('body'); } catch {}
+    if (body && !body.includes('Log In or Create Account') && !/404|Sign in with Google/.test(body.slice(0, 400))) {
+      const cookies = await ctx.cookies('https://arena.ai');
+      const auth = cookies.find(c => c.name === 'arena-auth-prod-v1.0' || c.name.startsWith('arena-auth-prod'));
+      if (auth) {
+        const cf = cookies.find(c => c.name === 'cf_clearance');
+        const country = cookies.find(c => c.name === 'user_country_code');
+        fs.writeFileSync(COOKIE_FILE, JSON.stringify({
+          arena_auth_v10: auth.value,
+          cf_clearance: cf ? cf.value : '',
+          user_country_code: country ? country.value : 'ID',
+        }, null, 2));
+        console.log('LOGIN OK — cookies saved to ' + COOKIE_FILE);
+        await ctx.close();
+        return;
+      }
+    }
+    if (i % 10 === 9) console.log('still waiting... (' + (i + 1) * 3 + 's)');
+  }
+  await ctx.close();
+  fail('login timeout (30 min) — run `node arena.js login` again');
 }
 
 // List models from the catalog API using the session's access token.
@@ -164,5 +205,6 @@ if (!mode || mode === '-h' || mode === '--help') {
   console.log('  node arena.js models');
   process.exit(0);
 }
-if (mode === 'models') await listModels();
+if (mode === 'login') await login();
+else if (mode === 'models') await listModels();
 else await chat(mode, rest);
